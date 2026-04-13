@@ -1,66 +1,54 @@
-import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
+import messaging from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
 
 export async function registerForPushNotificationsAsync() {
   let token;
 
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-    });
+  if (Platform.OS === 'ios') {
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      if (!enabled) {
+          console.log('Failed to get push token for push notification (iOS)!');
+          return;
+      }
   }
 
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+  try {
+      // Get the native FCM token
+      token = await messaging().getToken();
+      console.log("FCM Push Token:", token);
 
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== 'granted') {
-      console.log('Failed to get push token for push notification!');
-      return;
-    }
-
-    try {
-        // In a real app, you would pass projectId here or configure it in app.json
-        token = (await Notifications.getExpoPushTokenAsync()).data;
-        console.log("Expo Push Token:", token);
-
-        // Next step in real app: send token to backend / Firestore to associate with this user
-    } catch (e) {
-        console.error("Error getting push token:", e);
-    }
-  } else {
-    console.log('Must use physical device for Push Notifications');
+      // Next step in real app: send token to backend / Firestore to associate with this user
+  } catch (e) {
+      console.error("Error getting FCM push token:", e);
   }
 
   return token;
 }
 
 export function setupNotificationListeners() {
-  const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-    console.log("Notification Received:", notification);
+  // Listen for foreground notifications
+  const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+      console.log('A new FCM message arrived in the foreground!', JSON.stringify(remoteMessage));
   });
 
-  const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-    console.log("Notification Response Received (User Tapped):", response);
-    // Handle navigation based on notification data here
+  // Listen for notifications when the app is in the background and the user taps it
+  const unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('Notification caused app to open from background state:', remoteMessage.notification);
+      // Navigation logic could go here
   });
 
-  return { notificationListener, responseListener };
+  // Check if app was opened from a quit state by tapping a notification
+  messaging()
+    .getInitialNotification()
+    .then(remoteMessage => {
+      if (remoteMessage) {
+        console.log('Notification caused app to open from quit state:', remoteMessage.notification);
+      }
+    });
+
+  return { unsubscribeOnMessage, unsubscribeOnNotificationOpenedApp };
 }

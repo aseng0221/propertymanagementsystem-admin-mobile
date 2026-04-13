@@ -1,23 +1,25 @@
-import { initializeApp } from 'firebase/app';
-import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import firebase from '@react-native-firebase/app';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 
-const firebaseConfig = {
-  apiKey: "mock-api-key",
-  authDomain: "mock-auth-domain.firebaseapp.com",
-  projectId: "mock-project-id",
-  storageBucket: "mock-project-id.appspot.com",
-  messagingSenderId: "mock-messaging-sender-id",
-  appId: "mock-app-id"
-};
+// React Native Firebase uses native configuration files (google-services.json for Android,
+// GoogleService-Info.plist for iOS) instead of initializing with a config object in JS.
 
-const app = initializeApp(firebaseConfig);
+// Check if app is already initialized, otherwise initialize it.
+// This is typically only needed if you are manually initializing,
+// but usually @react-native-firebase/app auto-initializes.
+let app;
+if (!firebase.apps.length) {
+    app = firebase.initializeApp();
+} else {
+    app = firebase.app();
+}
 
-// Initialize Firestore with offline persistence
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache()
-});
+const db = firestore();
 
-const auth = getAuth(app);
+// Firestore offline persistence is enabled by default in @react-native-firebase/firestore
+// Settings can be customized if needed.
 
-export { app, db, auth };
+const firebaseAuth = auth();
+
+export { app, db, firebaseAuth as auth };

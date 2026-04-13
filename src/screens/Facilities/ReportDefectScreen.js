@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import { db } from '../../firebase/config';
 
 export default function ReportDefectScreen({ navigation }) {
@@ -53,11 +53,11 @@ export default function ReportDefectScreen({ navigation }) {
     try {
       // Note: In a real app, upload the image to Firebase Storage first,
       // then save the URL to Firestore.
-      await addDoc(collection(db, 'defects'), {
+      await db.collection('defects').add({
         facility,
         description,
         imageUri: image, // Mocking image storage
-        timestamp: serverTimestamp(),
+        timestamp: firestore.FieldValue.serverTimestamp(),
         status: 'Reported'
       });
       alert('Defect reported successfully!');

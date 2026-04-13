@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import { List, FAB, Text } from 'react-native-paper';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
 export default function VisitorListScreen({ navigation }) {
@@ -9,18 +8,24 @@ export default function VisitorListScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'visitors'), orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const visitorData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setVisitors(visitorData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching visitors:", error);
-      setLoading(false);
-    });
+    // Native Firebase Firestore syntax
+    const unsubscribe = db.collection('visitors')
+      .orderBy('timestamp', 'desc')
+      .onSnapshot((snapshot) => {
+        if (!snapshot) {
+             setLoading(false);
+             return;
+        }
+        const visitorData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setVisitors(visitorData);
+        setLoading(false);
+      }, (error) => {
+        console.error("Error fetching visitors:", error);
+        setLoading(false);
+      });
 
     return () => unsubscribe();
   }, []);

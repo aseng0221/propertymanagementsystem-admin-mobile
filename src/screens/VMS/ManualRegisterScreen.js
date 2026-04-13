@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { TextInput, Button, SegmentedButtons } from 'react-native-paper';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import { db } from '../../firebase/config';
 
 export default function ManualRegisterScreen({ navigation }) {
@@ -19,12 +19,12 @@ export default function ManualRegisterScreen({ navigation }) {
 
     setLoading(true);
     try {
-      await addDoc(collection(db, 'visitors'), {
+      await db.collection('visitors').add({
         name,
         phone,
         unit,
         type,
-        timestamp: serverTimestamp(),
+        timestamp: firestore.FieldValue.serverTimestamp(),
       });
       alert('Registered successfully!');
       navigation.goBack();

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import { List, FAB, Text, Button } from 'react-native-paper';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
 export default function FacilityScheduleScreen({ navigation }) {
@@ -19,12 +18,14 @@ export default function FacilityScheduleScreen({ navigation }) {
 
     // In a real app, listen to Firestore:
     /*
-    const q = query(collection(db, 'bookings'), orderBy('time'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setBookings(data);
-      setLoading(false);
-    });
+    const unsubscribe = db.collection('bookings')
+      .orderBy('time')
+      .onSnapshot((snapshot) => {
+        if (!snapshot) return;
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setBookings(data);
+        setLoading(false);
+      });
     return () => unsubscribe();
     */
   }, []);
@@ -38,7 +39,7 @@ export default function FacilityScheduleScreen({ navigation }) {
     // In a real app, update Firestore:
     /*
     try {
-      await updateDoc(doc(db, 'bookings', id), { status: newStatus });
+      await db.collection('bookings').doc(id).update({ status: newStatus });
     } catch (error) {
       console.error("Error updating booking status", error);
     }

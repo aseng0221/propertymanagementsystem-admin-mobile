@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
-import { onAuthStateChanged } from 'firebase/auth';
-import * as Notifications from 'expo-notifications';
 import { auth } from './src/firebase/config';
 import AppNavigator from './src/navigation/AppNavigator';
 import LoginScreen from './src/screens/Auth/LoginScreen';
@@ -11,31 +9,27 @@ import { registerForPushNotificationsAsync, setupNotificationListeners } from '.
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [expoPushToken, setExpoPushToken] = useState('');
-  const notificationListener = useRef();
-  const responseListener = useRef();
+  const [pushToken, setPushToken] = useState('');
 
   useEffect(() => {
     // Auth Listener
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       setIsAuthenticated(!!user);
       setIsLoading(false);
     });
 
     // Push Notification Setup
-    registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
+    registerForPushNotificationsAsync().then(token => setPushToken(token));
 
     const listeners = setupNotificationListeners();
-    notificationListener.current = listeners.notificationListener;
-    responseListener.current = listeners.responseListener;
 
     return () => {
       unsubscribeAuth();
-      if (notificationListener.current) {
-         Notifications.removeNotificationSubscription(notificationListener.current);
+      if (listeners.unsubscribeOnMessage) {
+          listeners.unsubscribeOnMessage();
       }
-      if (responseListener.current) {
-         Notifications.removeNotificationSubscription(responseListener.current);
+      if (listeners.unsubscribeOnNotificationOpenedApp) {
+          listeners.unsubscribeOnNotificationOpenedApp();
       }
     };
   }, []);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import { List, FAB, Text, useTheme } from 'react-native-paper';
+import { db } from '../../firebase/config';
 
 export default function SOSAlertsScreen({ navigation }) {
   const [alerts, setAlerts] = useState([]);
@@ -16,10 +17,12 @@ export default function SOSAlertsScreen({ navigation }) {
 
     // In a real app, listen to Firestore:
     /*
-    const q = query(collection(db, 'sos_alerts'), orderBy('time', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      ...
-    });
+    const unsubscribe = db.collection('sos_alerts')
+      .orderBy('time', 'desc')
+      .onSnapshot((snapshot) => {
+        if (!snapshot) return;
+        // Process snapshot...
+      });
     return () => unsubscribe();
     */
   }, []);
